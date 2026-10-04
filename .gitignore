@@ -1,0 +1,13 @@
+# private notes, never committed
+reference/
+
+# environment and caches
+.venv/
+__pycache__/
+
+# scorer output
+scorer_results/
+
+# images: only charts in reports/figures/ are tracked
+*.png
+!reports/figures/*.png

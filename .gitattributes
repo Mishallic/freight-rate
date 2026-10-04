@@ -1,0 +1,3 @@
+# keep given files byte-identical (no line-ending conversion)
+data/** -text
+provided/** -text
