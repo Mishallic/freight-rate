@@ -53,17 +53,20 @@ def predict_baseline(model, df):
     return baseline_key(df).map(model) * df["distance"]
 
 
-def evaluate_fold(train_test, fold):
+def prepare_fold(train_test, fold):
+    """Cleaned (training, test) rows of one fold. Corrupted rates are dropped from training only."""
     train, test = split(train_test, fold)
     medians = weight_medians(train)  # from the training months only
-    train = drop_corrupted(prepare(train, medians))
-    test = prepare(test, medians)
-    predicted = predict_baseline(fit_baseline(train), test)
+    return drop_corrupted(prepare(train, medians)), prepare(test, medians)
+
+
+def score(model_name, fold, test, predicted):
+    """Metrics on all test rows and on clean test rows (corrupted rates removed)."""
     clean = ~is_corrupted(test)
     return [
-        {"fold": fold, "rows": "all", "test_rows": len(test),
+        {"model": model_name, "fold": fold, "rows": "all", "test_rows": len(test),
          **metrics(test["posted_rate"], predicted)},
-        {"fold": fold, "rows": "clean", "test_rows": clean.sum(),
+        {"model": model_name, "fold": fold, "rows": "clean", "test_rows": clean.sum(),
          **metrics(test.loc[clean, "posted_rate"], predicted[clean])},
     ]
 
@@ -72,8 +75,9 @@ def main():
     train_test, _ = load_raw()
     results = []
     for fold in FOLDS:
-        results += evaluate_fold(train_test, fold)
-    table = pd.DataFrame(results).set_index(["fold", "rows"]).round(2)
+        train, test = prepare_fold(train_test, fold)
+        results += score("baseline", fold, test, predict_baseline(fit_baseline(train), test))
+    table = pd.DataFrame(results).set_index(["model", "fold", "rows"]).round(2)
     print(table.to_string())
     table.to_csv(REPORTS_DIR / "metrics_baseline.csv")
     print("saved", REPORTS_DIR / "metrics_baseline.csv")

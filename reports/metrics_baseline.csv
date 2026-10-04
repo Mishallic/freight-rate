@@ -1,5 +1,5 @@
-fold,rows,test_rows,MAE,MAPE,RMSE
-A,all,9671,140.53,6.23,630.31
-A,clean,9538,89.09,4.0,123.07
-B,all,9523,139.97,6.36,638.76
-B,clean,9379,84.43,3.85,115.81
+model,fold,rows,test_rows,MAE,MAPE,RMSE
+baseline,A,all,9671,140.53,6.23,630.31
+baseline,A,clean,9538,89.09,4.0,123.07
+baseline,B,all,9523,139.97,6.36,638.76
+baseline,B,clean,9379,84.43,3.85,115.81

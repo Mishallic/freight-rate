@@ -1,0 +1,13 @@
+model,fold,rows,test_rows,MAE,MAPE,RMSE
+default,A,all,9671,107.74,4.61,624.02
+default,A,clean,9538,55.87,2.36,81.39
+default,B,all,9523,101.8,4.51,631.85
+default,B,clean,9379,45.78,1.99,67.67
+l1_loss,A,all,9671,109.6,4.7,624.88
+l1_loss,A,clean,9538,57.7,2.44,84.17
+l1_loss,B,all,9523,103.06,4.56,632.35
+l1_loss,B,clean,9379,47.07,2.05,69.75
+smaller_trees,A,all,9671,107.45,4.63,624.1
+smaller_trees,A,clean,9538,55.54,2.37,80.68
+smaller_trees,B,all,9523,101.94,4.55,632.16
+smaller_trees,B,clean,9379,45.92,2.04,67.67
