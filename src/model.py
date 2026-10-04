@@ -18,6 +18,13 @@ VARIANTS = {
     "V3": V0 + ["day_of_week", "month_in_quarter", "day_of_quarter", "market_index"],
 }
 
+# The final model. V1 had the lowest clean MAPE on both validation folds, won on most
+# test days, and the weekday effect it adds is real (about +/-1% in the raw data).
+# Time-decay weights (half-life 30, 60 or 90 days) did not beat equal weights on both
+# folds by 0.1 points, so all training loads count the same.
+CHOSEN_VARIANT = "V1"
+HALF_LIFE = None
+
 # Fixed categories, so equipment is encoded the same way in training and prediction.
 EQUIPMENT_TYPES = pd.CategoricalDtype(["Dry Van", "Reefer", "Flatbed"])
 
@@ -42,10 +49,21 @@ def features(df, variant):
     return x[VARIANTS[variant]]
 
 
-def train_model(train, variant, **settings):
-    """Fit LightGBM on log(posted_rate). `settings` override PARAMS, to compare a few settings."""
+def decay_weights(dates, half_life):
+    """Sample weight 1 on the last training day, halving every `half_life` days further back."""
+    age_days = (dates.max() - dates).dt.days
+    return 0.5 ** (age_days / half_life)
+
+
+def train_model(train, variant, half_life=None, **settings):
+    """Fit LightGBM on log(posted_rate).
+
+    half_life (days): weight recent loads more; None = all loads count the same.
+    settings: override PARAMS, to compare a few settings.
+    """
+    weights = decay_weights(train["date"], half_life) if half_life else None
     model = lgb.LGBMRegressor(**{**PARAMS, **settings})
-    model.fit(features(train, variant), np.log(train["posted_rate"]))
+    model.fit(features(train, variant), np.log(train["posted_rate"]), sample_weight=weights)
     return model
 
 

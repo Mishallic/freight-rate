@@ -22,6 +22,10 @@ SETTINGS = {
     "smaller_trees": {"num_leaves": 15, "min_child_samples": 200},
 }
 
+# Time-decay sample weights tried on V1: half-life in days, counted back from the last
+# training day. Adopted only if one beats no weights on BOTH folds by >= 0.1 points.
+HALF_LIVES = [30, 60, 90]
+
 
 def signed_error_by_month(test, predicted):
     """Mean of (predicted / actual - 1) in % per test month, on clean test rows."""
@@ -68,12 +72,19 @@ def main():
             models[variant, fold] = train_model(train, variant)
             predictions[variant, fold] = predict(models[variant, fold], test, variant)
             results += score(variant, fold, test, predictions[variant, fold])
+        for half_life in HALF_LIVES:
+            model = train_model(train, "V1", half_life=half_life)
+            results += score(f"V1_hl{half_life}", fold, test, predict(model, test, "V1"))
     results = pd.DataFrame(results)
     table = results.set_index(["model", "fold", "rows"]).round(2)
     print(table.to_string())
     table.to_csv(REPORTS_DIR / "metrics_models.csv")
 
     clean_mape = results[results["rows"] == "clean"].pivot(index="model", columns="fold", values="MAPE")
+    print("\n== Time-decay weights on V1: clean MAPE gain over no weights, points ==")
+    decay = [f"V1_hl{half_life}" for half_life in HALF_LIVES]
+    print((clean_mape.loc["V1"] - clean_mape.loc[decay]).round(2).to_string())
+
     clean_mape = clean_mape.loc[["baseline", *VARIANTS]]
     best = clean_mape.drop("baseline").mean(axis=1).idxmin()
     print(f"\nbest variant (lowest clean MAPE averaged over both folds): {best}")
