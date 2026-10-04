@@ -4,6 +4,7 @@ reference/
 # environment and caches
 .venv/
 __pycache__/
+.pytest_cache/
 
 # scorer output
 scorer_results/
