@@ -96,7 +96,7 @@ def main():
     print("\n== Mean signed error by test month, clean rows (%, negative = under-predicted) ==")
     by_month = pd.DataFrame({
         name: pd.concat([signed_error_by_month(folds[fold][1], predictions[name, fold]) for fold in FOLDS])
-        for name in ["baseline", best]
+        for name in ["baseline", *VARIANTS]
     })
     print(by_month.round(2).to_string())
 

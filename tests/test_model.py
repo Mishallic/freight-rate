@@ -16,3 +16,5 @@ def test_quarter_features():
     assert out["month_in_quarter"].tolist() == [1, 3, 1, 3]
     assert out["day_of_quarter"].tolist() == [1, 90, 1, 92]
     assert out["day_of_week"].tolist() == [2, 0, 1, 2]  # Wed, Mon, Tue, Wed
+    # Day of month in March, June, September and December; 0 in other months.
+    assert features(loads, "V1+ramp")["quarter_end_ramp"].tolist() == [0, 31, 0, 31]

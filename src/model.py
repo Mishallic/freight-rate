@@ -8,7 +8,8 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
-# Feature variants. Each one adds features to the one before.
+# Feature variants. V1 to V3 each add features to the one before; V1+ramp is V1 plus a
+# quarter-end ramp, testing whether rates climbing through quarter-end months can be learned.
 V0 = ["distance", "weight", "weight_capped", "equipment",
       "pickup_lat", "pickup_lon", "delivery_lat", "delivery_lon"]
 VARIANTS = {
@@ -16,6 +17,7 @@ VARIANTS = {
     "V1": V0 + ["day_of_week"],
     "V2": V0 + ["day_of_week", "month_in_quarter", "day_of_quarter"],
     "V3": V0 + ["day_of_week", "month_in_quarter", "day_of_quarter", "market_index"],
+    "V1+ramp": V0 + ["day_of_week", "quarter_end_ramp"],
 }
 
 # The final model. V1 had the lowest clean MAPE on both validation folds, won on most
@@ -46,6 +48,8 @@ def features(df, variant):
     x["day_of_week"] = x["date"].dt.dayofweek  # 0 = Monday
     x["month_in_quarter"] = (x["date"].dt.month - 1) % 3 + 1  # 1, 2 or 3
     x["day_of_quarter"] = (x["date"] - quarter_start).dt.days + 1  # 1 to 92
+    quarter_end_month = x["date"].dt.month.isin([3, 6, 9, 12])
+    x["quarter_end_ramp"] = x["date"].dt.day.where(quarter_end_month, 0)  # day of month, else 0
     return x[VARIANTS[variant]]
 
 

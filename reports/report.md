@@ -11,7 +11,9 @@ Each load has pickup and delivery cities with coordinates, distance, equipment (
 | Issue | Rows (train_test / validation) | Handling |
 |---|---|---|
 | Corrupted rates | 677 / not applicable | Removed from training only (rule below) |
-| Weight: sign flipped, at the 47,500 lbs cap, missing | 292 / 145, 1,204 / 301, 300 / 165 | abs(); keep the cap value with a flag; fill with the training median per equipment (~31,500 lbs) with a flag |
+| Weight sign flipped (negative) | 292 / 145 | abs() |
+| Weight at the 47,500 lbs cap | 1,204 / 301 | Kept at 47,500, with a flag |
+| Weight missing | 300 / 165 | Training median per equipment (~31,500 lbs), with a flag |
 | Missing market_index | 374 / 249 | One value per day plus small noise, so filled with that day's mean |
 | quote_signal leaks the rate | all rows | Kept in the data, not used as a model input |
 
@@ -21,7 +23,7 @@ Each load has pickup and delivery cities with coordinates, distance, equipment (
 ![Figure 1: Rate per mile divided by the median for the same equipment and distance band. Red: flagged as corrupted.](figures/2_rate_ratio_outliers.png)
 
 <!-- REWRITE -->
-**quote_signal.** In January, February, March, June and September it is almost exactly the rate per mile (correlation +1.00); in April, May, July and October it is mirrored (about 4.15 minus the rate per mile, -0.99); in August it is unrelated (-0.02). November and December look like August: its correlation with distance is 0.02 and 0.01, against about ±0.7 in every other month. On an August test, a model using it had 5.2% error against 2.2% without it.
+**quote_signal.** On clean rows, it is almost exactly the rate per mile in January, February, March, June and September (correlation +1.00), mirrored in April, May, July and October (about 4.15 minus the rate per mile, correlation -0.99), and unrelated in August (-0.02). November and December look like August: its correlation with distance is 0.02 and 0.01, against about ±0.7 in every other month. On an August test, a model using it had 5.2% error against 2.2% without it.
 
 <!-- REWRITE -->
 **New cities.** Eight cities appear only in validation (Allentown, Charlotte, Chicago, Jackson, Knoxville, Laredo, Norfolk, San Diego), on 1,447 loads (12.1%), so the model uses coordinates and distance, never city names. Their predicted rate per mile is 0.999 times the training median for similar loads (5-95%: 0.93-1.07), against 0.998 for known cities.
@@ -37,12 +39,13 @@ Errors are reported on all test rows and on clean test rows (corrupted rates rem
 ## 3. Model
 
 <!-- REWRITE -->
-The baseline predicts the training median rate per mile for the load's distance band and equipment, times distance. The model is LightGBM on log(rate) with fixed settings (600 trees, learning rate 0.05, 31 leaves, at least 50 loads per leaf); L1 loss and smaller trees were no better. Four feature sets were compared:
+The baseline predicts the training median rate per mile for the load's distance band and equipment, times distance. The model is LightGBM on log(rate) with fixed settings (600 trees, learning rate 0.05, 31 leaves, at least 50 loads per leaf); L1 loss and smaller trees were no better. Five feature sets were compared:
 
 - V0: distance, weight, weight-cap flag, equipment, pickup and delivery coordinates
 - V1: V0 + day of week
 - V2: V1 + month in quarter + day of quarter
 - V3: V2 + market_index
+- V1+ramp: V1 + day of month in March, June, September and December (0 in other months)
 
 | Model | Clean MAPE, fold A | Clean MAPE, fold B | All-rows MAPE, fold A | All-rows MAPE, fold B |
 |---|---|---|---|---|
@@ -51,6 +54,7 @@ The baseline predicts the training median rate per mile for the load's distance 
 | **V1 (chosen)** | **2.26%** | **1.91%** | **4.51%** | **4.42%** |
 | V2 | 2.99% | 4.28% | 5.24% | 6.73% |
 | V3 | 2.65% | 3.81% | 4.86% | 6.22% |
+| V1+ramp | 2.65% | 2.26% | 4.88% | 4.78% |
 
 ![Figure 2: Clean-row MAPE per model and fold (fold A tests July-August, fold B tests September-October).](figures/5_model_comparison.png)
 
@@ -58,7 +62,7 @@ The baseline predicts the training median rate per mile for the load's distance 
 V1 is chosen: lowest clean MAPE on both folds (MAE $53 and $43), better than V0 on 60% and 52% of test days, and its weekday effect is real (raw rates are about 1% higher on Thursdays and 1% lower on Sundays and Mondays). Distance carries 99% of the gain; the improvement over the baseline is mostly a smooth rate-per-mile curve over distance instead of six bands.
 
 <!-- REWRITE -->
-Every attempt to model change over time made things worse. Quarter features (V2) learned the levels of the few training quarters, not a repeating pattern (fold B: September 3.5% too high, October 4.9% too low). Raw market_index (V3) is confounded with the season (October 5.2% too low). Weighting recent loads more (half-lives of 30, 60, 90 days) was worse on fold A and gained at most 0.08 points on fold B, below the 0.1-point bar set in advance. A quarter-end ramp feature was worse on both folds (by 0.40 and 0.37 points).
+Every attempt to model change over time made things worse. Quarter features (V2) learned the levels of the few training quarters, not a repeating pattern (fold B: September 3.5% too high, October 4.9% too low). Raw market_index (V3) is confounded with the season (October 5.2% too low). Weighting recent loads more (half-lives of 30, 60, 90 days) was worse on fold A and gained at most 0.08 points on fold B, below the 0.1-point bar set in advance. The quarter-end ramp (V1+ramp) was worse on both folds (2.65% and 2.26%, against 2.26% and 1.91% for V1) and over-predicted September by 1.8%.
 
 ## 4. December chart
 
