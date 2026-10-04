@@ -28,7 +28,7 @@ src/
   explore.py                 data facts and figures 1-4
   evaluate.py                time-based folds, metrics, baseline model
   model.py                   features and the LightGBM model
-  compare.py                 baseline vs feature variants, figure 5
+  compare.py                 baseline vs feature variants, extra checks, figure 5
   predict.py                 final model, prediction files, scorer run, sanity checks
   report_to_docx.py          converts reports/report.md to reports/report.docx
   style.py                   shared chart colors and style
@@ -71,5 +71,5 @@ figure 5) and `python src/report_to_docx.py` (Word version of the report).
 | `outputs/december_predictions.csv` | the 31 December chart rows with `predicted_rate` filled in; `data/` is left unchanged |
 | `scorer_results/candidate_december.png` | the scorer's December chart, created when the scorer runs (not tracked in git) |
 | `reports/figures/` | charts 1-6; the report uses 2, 5 and 6 |
-| `reports/metrics_*.csv` | validation metrics for the baseline, the feature variants and the settings check |
+| `reports/metrics_*.csv` | validation metrics for the baseline, the feature variants, the settings check and the quote_signal check |
 | `reports/report.md`, `reports/report.docx` | write-up of the data, validation, model and December chart |

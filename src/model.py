@@ -1,7 +1,8 @@
 """LightGBM model on log(posted_rate), and the features it uses.
 
 No city names (8 validation cities never appear in training) and no quote_signal
-(no rate information in Nov-Dec, see data.py).
+(no rate information in Nov-Dec, see data.py). The one exception is V1+quote_signal,
+which only exists to measure what quote_signal does on an August test (compare.py).
 """
 
 import lightgbm as lgb
@@ -18,6 +19,7 @@ VARIANTS = {
     "V2": V0 + ["day_of_week", "month_in_quarter", "day_of_quarter"],
     "V3": V0 + ["day_of_week", "month_in_quarter", "day_of_quarter", "market_index"],
     "V1+ramp": V0 + ["day_of_week", "quarter_end_ramp"],
+    "V1+quote_signal": V0 + ["day_of_week", "quote_signal"],  # not a candidate, see docstring
 }
 
 # The final model. V1 had the lowest clean MAPE on both validation folds, won on most

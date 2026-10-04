@@ -21,9 +21,9 @@ FOLDS = {
 
 
 def split(df, fold):
-    """Return the (training, test) rows of one fold, picked by month."""
+    """Return the (training, test) rows of a fold, given as {"train": months, "test": months}."""
     month = df["date"].dt.month
-    return df[month.isin(FOLDS[fold]["train"])], df[month.isin(FOLDS[fold]["test"])]
+    return df[month.isin(fold["train"])], df[month.isin(fold["test"])]
 
 
 def metrics(y_true, y_pred):
@@ -54,7 +54,7 @@ def predict_baseline(model, df):
 
 
 def prepare_fold(train_test, fold):
-    """Cleaned (training, test) rows of one fold. Corrupted rates are dropped from training only."""
+    """Cleaned (training, test) rows of a fold. Corrupted rates are dropped from training only."""
     train, test = split(train_test, fold)
     medians = weight_medians(train)  # from the training months only
     return drop_corrupted(prepare(train, medians)), prepare(test, medians)
@@ -74,9 +74,9 @@ def score(model_name, fold, test, predicted):
 def main():
     train_test, _ = load_raw()
     results = []
-    for fold in FOLDS:
+    for name, fold in FOLDS.items():
         train, test = prepare_fold(train_test, fold)
-        results += score("baseline", fold, test, predict_baseline(fit_baseline(train), test))
+        results += score("baseline", name, test, predict_baseline(fit_baseline(train), test))
     table = pd.DataFrame(results).set_index(["model", "fold", "rows"]).round(2)
     print(table.to_string())
     table.to_csv(REPORTS_DIR / "metrics_baseline.csv")

@@ -1,0 +1,9 @@
+model,fold,rows,test_rows,MAE,MAPE,RMSE
+V1,August,all,4759,91.5,4.27,613.16
+V1,August,clean,4691,41.48,1.82,60.67
+V1+quote_signal,August,all,4759,149.06,7.0,622.78
+V1+quote_signal,August,clean,4691,100.18,4.65,141.07
+V1,B,all,9523,99.38,4.42,630.95
+V1,B,clean,9379,43.38,1.91,64.17
+V1+quote_signal,B,all,9523,90.34,4.01,628.72
+V1+quote_signal,B,clean,9379,34.28,1.49,52.2

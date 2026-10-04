@@ -109,6 +109,25 @@ def print_facts(train_test, validation):
     }).set_axis(list(calendar.day_abbr))
     print(by_weekday.round(3).T.to_string())
 
+    print("\n== Rate level over time (kept train_test rows) ==")
+    # Level = rate per mile / median for the same equipment and distance band (the ratio
+    # above), so a change in the distance or equipment mix doesn't move it.
+    level, date = ratio[kept], train_test.loc[kept, "date"]
+    level_by_month = level.groupby(date.dt.month).median().set_axis(list(calendar.month_abbr)[1:11])
+    print(level_by_month.round(3).to_frame("median level").T.to_string())
+    # Climb within each month: mean daily level of the last 7 days vs the first 7 days.
+    # Seven days hold each weekday once, so the weekly cycle cancels out.
+    daily = level.groupby(date).median()
+    first = daily.groupby(daily.index.month).head(7)
+    last = daily.groupby(daily.index.month).tail(7)
+    first_week = first.groupby(first.index.month).mean()
+    last_week = last.groupby(last.index.month).mean()
+    weeks = pd.DataFrame({
+        "climb within the month %": 100 * (last_week / first_week - 1),
+        "change into next month %": 100 * (first_week.shift(-1) / last_week - 1),
+    }).set_axis(list(calendar.month_abbr)[1:11])
+    print(weeks.round(1).T.to_string())
+
     print("\n== Distance ==")
     straight = haversine_miles(train_test["pickup_lat"], train_test["pickup_lon"],
                                train_test["delivery_lat"], train_test["delivery_lon"])
@@ -129,12 +148,19 @@ def print_facts(train_test, validation):
     # Correlation per month. With the rate: kept train_test rows (validation has no rates).
     # With distance: both files, so November and December can be compared with labelled months.
     clean = train_test[kept]
+    clean_rpm = clean["posted_rate"] / clean["distance"]
+    clean_month = clean["date"].dt.month
+    corr_with_rate = clean["quote_signal"].groupby(clean_month).corr(clean_rpm)
     by_month = pd.DataFrame({
-        "corr with rate per mile": clean["quote_signal"].groupby(clean["date"].dt.month)
-                                   .corr(clean["posted_rate"] / clean["distance"]),
+        "corr with rate per mile": corr_with_rate,
         "corr with distance": both["quote_signal"].groupby(both["date"].dt.month).corr(both["distance"]),
     }).set_axis(list(calendar.month_abbr)[1:])
     print(by_month.round(2).T.to_string())
+    # In the months with a strong negative correlation, quote_signal mirrors the rate per mile.
+    mirrored = clean_month.isin(corr_with_rate.index[corr_with_rate < -0.5])
+    total = clean["quote_signal"][mirrored] + clean_rpm[mirrored]
+    print(f"months with correlation below -0.5: quote_signal + rate per mile has median {total.median():.2f} "
+          f"(middle 90%: {total.quantile(0.05):.2f} to {total.quantile(0.95):.2f})")
 
 
 def save(fig, name):

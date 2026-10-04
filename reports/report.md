@@ -23,7 +23,7 @@ Each load has pickup and delivery cities with coordinates, distance, equipment (
 ![Figure 1: Rate per mile divided by the median for the same equipment and distance band. Red: flagged as corrupted.](figures/2_rate_ratio_outliers.png)
 
 <!-- REWRITE -->
-**quote_signal.** On clean rows, it is almost exactly the rate per mile in January, February, March, June and September (correlation +1.00), mirrored in April, May, July and October (about 4.15 minus the rate per mile, correlation -0.99), and unrelated in August (-0.02). November and December look like August: its correlation with distance is 0.02 and 0.01, against about ±0.7 in every other month. On an August test, a model using it had 5.2% error against 2.2% without it.
+**quote_signal.** On clean rows, it is almost exactly the rate per mile in January, February, March, June and September (correlation +1.00), mirrored in April, May, July and October (about 4.15 minus the rate per mile, correlation -0.99), and unrelated in August (-0.02). November and December look like August: its correlation with distance is 0.02 and 0.01, against about ±0.7 in every other month. Trained on January-July and tested on August, V1 with quote_signal has 4.65% clean MAPE against 1.82% without it; on fold B, where it carries the rate, it would help (1.49% against 1.91%).
 
 <!-- REWRITE -->
 **New cities.** Eight cities appear only in validation (Allentown, Charlotte, Chicago, Jackson, Knoxville, Laredo, Norfolk, San Diego), on 1,447 loads (12.1%), so the model uses coordinates and distance, never city names. Their predicted rate per mile is 0.999 times the training median for similar loads (5-95%: 0.93-1.07), against 0.998 for known cities.
@@ -72,7 +72,7 @@ Every attempt to model change over time made things worse. Quarter features (V2)
 The chart fixes the load (Lexington to Fort Wayne, 360 miles, Dry Van, 32,000 lbs) and changes only the date. Coordinates come from the training data, where both cities appear; 32,000 lbs is below the cap, so the cap flag is off. The line is a weekly rhythm and nothing else: $834.36 on Thursdays, $811.55 on Sundays, mean $823.76. The scorer zooms the y-axis, so this 2.8% swing looks larger than it is. Scaled to 360 miles, same-lane Dry Van loads paid a median of $804 in training (21 loads), and Dry Van loads of 340-380 miles on any lane $838 (656 loads).
 
 <!-- REWRITE -->
-The main known limitation: rates climbed about 3-4% through March, June and September, then dropped when the next quarter started. December also ends a quarter, but no feature tested could learn this from three quarters of history, so late-December predictions may be 2-4% low.
+The main known limitation: rates climbed 4.5%, 3.3% and 2.8% through March, June and September (last week against first week), then dropped 3.3%, 3.7% and 2.0% when the next quarter started. December also ends a quarter, but no feature tested could learn this from three quarters of history, so late-December predictions may be 2-4% low.
 
 ## 5. Limits and next steps
 

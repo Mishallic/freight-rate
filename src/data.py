@@ -5,8 +5,9 @@ never differ. drop_corrupted() removes loads with a corrupted rate; use it for t
 
 quote_signal stays in the data but is NOT a model feature. In most labelled months it is
 a near-copy of the rate per mile (mirrored in Apr, May, Jul and Oct), but in August and
-in the whole validation period (Nov-Dec) it carries no rate information. On an August
-test, a model that uses it has 5.2% error against 2.2% without it.
+in the whole validation period (Nov-Dec) it carries no rate information. Trained on
+Jan-Jul and tested on August, a model that uses it has 4.65% clean MAPE against 1.82%
+without it (see compare.py).
 """
 
 from pathlib import Path

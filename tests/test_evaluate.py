@@ -8,7 +8,7 @@ from evaluate import FOLDS, metrics, split
 
 def test_folds_do_not_overlap_and_test_comes_after_training():
     train_test, _ = load_raw()
-    for fold in FOLDS:
+    for fold in FOLDS.values():
         train, test = split(train_test, fold)
         assert set(train["load_id"]).isdisjoint(test["load_id"])
         assert train["date"].max() < test["date"].min()
